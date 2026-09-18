@@ -1,0 +1,38 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suos
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Byte-compiled Python files (anywhere in the repo)
+__pycache__/
+*.py[cod]
+*.pyc
+
+# ML artifacts and data files
+Machine_Learning_Pipeline/**/*.joblib
+Machine_Learning_Pipeline/**/*.parquet
+Machine_Learning_Pipeline/**/*.json
+
+# Environment / secrets
+.env
+.env.local

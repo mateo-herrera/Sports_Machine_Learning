@@ -2,7 +2,9 @@
 
 A full-stack machine learning application that predicts the winner of upcoming MLB games and compares those predictions side-by-side with live odds from [Polymarket](https://polymarket.com), a peer-to-peer prediction market.
 
-![](docs/images/ScreenShot_9_20_2026.png)
+<p align="center">
+  <img src="docs/images/ScreenShot_9_20_2026.png" alt="Game cards showing model vs Polymarket odds" width="200">
+</p>
 
 ## Project Goal
 

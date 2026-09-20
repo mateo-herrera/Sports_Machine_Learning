@@ -1,21 +1,54 @@
-import requests
-from datetime import date, timedelta, datetime, timezone
-import pandas as pd
-import joblib
-import pytz
+"""
+Serve predictions for upcoming MLB games, alongside live Polymarket odds.
+
+Why this was rewritten
+----------------------
+The previous version reimplemented every feature by hand (get_latest_team_stats,
+get_latest_pitcher_stats, get_latest_bullpen_stats). That is the classic
+train/serve skew bug: two copies of the same formulas that drift apart. By the
+time the model moved to Elo, FIP, K% and difference features, the prediction
+path was still producing season-long ERA and raw win percentage -- five of the
+six features the model wanted did not exist, and because missing features were
+handled with `continue`, the endpoint silently returned zero games.
+
+This version computes NOTHING by hand. Upcoming games are appended to the
+historical frame as placeholder rows with unknown outcomes, and the SAME
+training pipeline runs over the whole thing. Every feature is shift(1)-based,
+so a placeholder receives exactly the pre-game values it would have had if the
+game were already played. Change a feature in the pipeline and this path
+follows automatically.
+
+Dates are processed one at a time: two unplayed games for the same team in one
+frame would put a NaN inside the second one's rolling window.
+"""
+
 import json
-
-from .team_data_pipeline import clean_json_data, get_training_data
-from .pitcher_pipeline import get_full_training_data, pull_all_pitcher_starts, add_pitcher_rolling_stats
-from .PolyMarket.polymarket_API import get_MLB_markets
-
-
 import os
+from datetime import date, datetime, timedelta
+
+import joblib
+import pandas as pd
+import pytz
+import requests
+
+from .pitcher_pipeline import (
+    BULLPEN_STAT_COLS,
+    PITCHER_STAT_COLS,
+    build_upcoming_pitcher_features,
+    pull_all_pitcher_starts,
+)
+from .team_data_pipeline import (
+    build_upcoming_team_features,
+    clean_json_data,
+    get_training_data,
+    to_differences,
+)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(SCRIPT_DIR, 'mlb_model.joblib')
 
-#Hardcoded teams ids to shorter names
+MIN_YEAR = 2022          # must match train_model.MIN_YEAR
+
 TEAM_SHORT_NAMES = {
     108: "Angels", 109: "Diamondbacks", 110: "Orioles", 111: "Red Sox",
     112: "Cubs", 113: "Reds", 114: "Guardians", 115: "Rockies",
@@ -28,32 +61,35 @@ TEAM_SHORT_NAMES = {
 }
 
 
+# --------------------------------------------------------------------------
+# Schedule
+# --------------------------------------------------------------------------
+
 def get_upcoming_games():
-    today_str = date.today().strftime('%Y-%m-%d')
-    tomorrow_str = (date.today() + timedelta(days=1)).strftime('%Y-%m-%d')
+    """Today's and tomorrow's schedule with probable starters.
 
-    combined_dates = []
-
-    for target_date in [today_str, tomorrow_str]:
-        url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={target_date}&hydrate=probablePitcher"
-        response = requests.get(url)
-
+    probablePitcher is the only source available before a game -- the
+    boxscore used for training does not exist yet. Starters are sometimes
+    scratched, so refresh close to first pitch rather than once a morning.
+    """
+    combined = []
+    for offset in (0, 1):
+        target = (date.today() + timedelta(days=offset)).strftime('%Y-%m-%d')
+        url = (f"https://statsapi.mlb.com/api/v1/schedule?sportId=1"
+               f"&date={target}&hydrate=probablePitcher")
+        response = requests.get(url, timeout=15)
         if response.status_code != 200:
-            raise Exception(f"Error {response.status_code} fetching schedule for {target_date}")
+            raise Exception(f"Error {response.status_code} fetching schedule for {target}")
+        combined.extend(response.json().get('dates', []))
+    return {'dates': combined}
 
-        data = response.json()
-        combined_dates.extend(data.get('dates', []))
-
-    return {'dates': combined_dates}
 
 def extract_upcoming_game_info(data):
     games = []
     for date_entry in data['dates']:
         for game in date_entry['games']:
             t = game['teams']
-            home_pitcher = t['home'].get('probablePitcher')
-            away_pitcher = t['away'].get('probablePitcher')
-
+            hp, ap = t['home'].get('probablePitcher'), t['away'].get('probablePitcher')
             games.append({
                 'game_id': game['gamePk'],
                 'date': date_entry['date'],
@@ -61,194 +97,129 @@ def extract_upcoming_game_info(data):
                 'home_team_name': t['home']['team']['name'],
                 'away_team_id': t['away']['team']['id'],
                 'away_team_name': t['away']['team']['name'],
-                'home_pitcher_id': home_pitcher['id'] if home_pitcher else None,
-                'home_pitcher_name': home_pitcher['fullName'] if home_pitcher else None,
-                'away_pitcher_id': away_pitcher['id'] if away_pitcher else None,
-                'away_pitcher_name': away_pitcher['fullName'] if away_pitcher else None,
+                'home_pitcher_id': hp['id'] if hp else None,
+                'home_pitcher_name': hp['fullName'] if hp else None,
+                'away_pitcher_id': ap['id'] if ap else None,
+                'away_pitcher_name': ap['fullName'] if ap else None,
             })
     return games
 
-def get_latest_team_stats(long_df, team_id, windows=(5, 10, 20)):
-    team_games = long_df[long_df['team_id'] == team_id].sort_values('date')
-    if team_games.empty:
-        return None
 
-    stats = {}
-    for window in windows:
-        recent = team_games.tail(window)
-        stats[f'win_pct_last{window}'] = recent['win'].mean()
-        stats[f'run_diff_last{window}'] = recent['run_diff'].mean()
+# --------------------------------------------------------------------------
+# Features, via the training pipeline
+# --------------------------------------------------------------------------
 
-    stats['win_pct_season'] = team_games['win'].mean()
-    stats['run_diff_season'] = team_games['run_diff'].mean()
-    return stats
+def build_feature_frame(games, long_df, pitcher_df, hist_final_df):
+    """One feature row per upcoming game, built by the training code itself."""
+    frames = []
+
+    for target_date in sorted({g['date'] for g in games}):
+        todays = [g for g in games if g['date'] == target_date]
+
+        team_rows = build_upcoming_team_features(long_df, todays)
+        if team_rows.empty:
+            continue
+
+        # The bullpen windows need team ids for the upcoming games too.
+        upcoming_lookup = pd.DataFrame([{
+            'game_id': g['game_id'],
+            'date': pd.to_datetime(g['date']),
+            'home_team_id': g['home_team_id'],
+            'away_team_id': g['away_team_id'],
+        } for g in todays])
+        lookup = pd.concat(
+            [hist_final_df[['game_id', 'date', 'home_team_id', 'away_team_id']],
+             upcoming_lookup],
+            ignore_index=True,
+        ).drop_duplicates(subset='game_id')
+
+        pitch_rows = build_upcoming_pitcher_features(pitcher_df, lookup, todays)
+        if pitch_rows.empty:
+            continue
+
+        merged = _attach_pitcher_columns(team_rows, pitch_rows)
+        frames.append(merged)
+
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
 
 
-def get_latest_pitcher_stats(pitcher_df, pitcher_id, windows=(3, 5, 10)):
-    pitcher_games = pitcher_df[pitcher_df['pitcher_id'] == pitcher_id].sort_values('date')
-    if pitcher_games.empty:
-        return None
+def _attach_pitcher_columns(team_rows, pitch_rows):
+    """Split pitcher rows into home_/away_ columns, same naming as training."""
+    p_cols = [c for c in PITCHER_STAT_COLS if c in pitch_rows.columns]
+    b_cols = [c for c in BULLPEN_STAT_COLS if c in pitch_rows.columns]
 
-    stats = {}
-    for window in windows:
-        recent = pitcher_games.tail(window)
-        total_outs = recent['outs'].sum()
-        total_er = recent['game_er'].sum()
-        total_k = recent['game_k'].sum()
-        stats[f'era_last{window}'] = (total_er / (total_outs / 3)) * 9 if total_outs > 0 else None
-        stats[f'k_per9_last{window}'] = (total_k / (total_outs / 3)) * 9 if total_outs > 0 else None
+    home = pitch_rows.loc[pitch_rows['is_home'], ['game_id'] + p_cols + b_cols].rename(
+        columns={**{c: f'home_pitcher_{c}' for c in p_cols},
+                 **{c: f'home_{c}' for c in b_cols}})
+    away = pitch_rows.loc[~pitch_rows['is_home'], ['game_id'] + p_cols + b_cols].rename(
+        columns={**{c: f'away_pitcher_{c}' for c in p_cols},
+                 **{c: f'away_{c}' for c in b_cols}})
 
-    # season-long
-    total_outs = pitcher_games['outs'].sum()
-    total_er = pitcher_games['game_er'].sum()
-    total_k = pitcher_games['game_k'].sum()
-    stats['era_season'] = (total_er / (total_outs / 3)) * 9 if total_outs > 0 else None
-    stats['k_per9_season'] = (total_k / (total_outs / 3)) * 9 if total_outs > 0 else None
+    out = team_rows.merge(home, on='game_id', how='left')
+    return out.merge(away, on='game_id', how='left')
 
-    return stats
-
-def get_latest_bullpen_stats(pitcher_df, team_id, windows=(3, 5)):
-    team_bullpen = pitcher_df[pitcher_df['team_id'] == team_id].sort_values('date')
-    if team_bullpen.empty:
-        return None
-
-    stats = {}
-    for window in windows:
-        recent = team_bullpen.tail(window)
-        stats[f'bullpen_ip_last{window}'] = recent['bullpen_ip'].sum()
-        total_er = recent['bullpen_er'].sum()
-        total_ip = recent['bullpen_ip'].sum()
-        stats[f'bullpen_era_last{window}'] = (total_er / total_ip) * 9 if total_ip > 0 else None
-
-    return stats
-
-def build_prediction_row(game, long_df, pitcher_df):
-    home_team_stats = get_latest_team_stats(long_df, game['home_team_id'])
-    away_team_stats = get_latest_team_stats(long_df, game['away_team_id'])
-
-    home_pitcher_stats = get_latest_pitcher_stats(pitcher_df, game['home_pitcher_id']) if game['home_pitcher_id'] else None
-    away_pitcher_stats = get_latest_pitcher_stats(pitcher_df, game['away_pitcher_id']) if game['away_pitcher_id'] else None
-
-    home_bullpen_stats = get_latest_bullpen_stats(pitcher_df, game['home_team_id'])
-    away_bullpen_stats = get_latest_bullpen_stats(pitcher_df, game['away_team_id'])
-
-    row = {'game_id': game['game_id'], 'home_team_name': game['home_team_name'], 'away_team_name': game['away_team_name']}
-
-    if home_team_stats:
-        row.update({f'home_{k}': v for k, v in home_team_stats.items()})
-    if away_team_stats:
-        row.update({f'away_{k}': v for k, v in away_team_stats.items()})
-    if home_pitcher_stats:
-        row.update({f'home_pitcher_{k}': v for k, v in home_pitcher_stats.items()})
-    if away_pitcher_stats:
-        row.update({f'away_pitcher_{k}': v for k, v in away_pitcher_stats.items()})
-    if home_bullpen_stats:
-        row.update({f'home_{k}': v for k, v in home_bullpen_stats.items()})
-    if away_bullpen_stats:
-        row.update({f'away_{k}': v for k, v in away_bullpen_stats.items()})
-
-    return row
 
 
 def format_game_time(game_date_str):
-    """Convert '2026-09-16T17:10:00Z' to '1:05pm' Eastern."""
-    utc_time = datetime.fromisoformat(game_date_str.replace('Z', '+00:00'))
-    eastern = utc_time.astimezone(pytz.timezone('America/New_York'))
-    return eastern.strftime('%-I:%M%p').lower()
+    utc = datetime.fromisoformat(game_date_str.replace('Z', '+00:00'))
+    return utc.astimezone(pytz.timezone('America/New_York')).strftime('%-I:%M%p').lower()
 
 
 
-def match_polymarket_to_game(market_games, home_team_full, away_team_full):
-    for market in market_games:
-        title = market.get("game_title", "")
-        if home_team_full in title and away_team_full in title:
-            return market
-    return None
 
-
-def parse_polymarket_odds(market, home_team_full, away_team_full):
-    if not market:
-        return None, None
-
-    outcomes = market.get("outcomes")
-    prices = market.get("outcomePrices")
-    if not outcomes or not prices:
-        return None, None
-
-    if isinstance(outcomes, str):
-        outcomes = json.loads(outcomes)
-    if isinstance(prices, str):
-        prices = json.loads(prices)
-
-    home_price, away_price = None, None
-    for outcome, price in zip(outcomes, prices):
-        if outcome == home_team_full:
-            home_price = float(price)
-        elif outcome == away_team_full:
-            away_price = float(price)
-
-    return home_price, away_price
-
-
-def get_predictions_for_upcoming_games():
-    saved = joblib.load(MODEL_PATH) 
-    model_cv = saved['model']
-    trained_feature_cols = saved['feature_cols']
+# --------------------------------------------------------------------------
+# Entry point
+# --------------------------------------------------------------------------
+def compute_predictions():
+    saved = joblib.load(MODEL_PATH)
+    model, trained_cols = saved['model'], saved['feature_cols']
+    uses_differences = saved.get('uses_differences', False)
     metrics = saved.get('metrics', {})
 
-    raw_data = get_upcoming_games()
-    games = extract_upcoming_game_info(raw_data)
+    schedule = get_upcoming_games()            # once
+    games = extract_upcoming_game_info(schedule)
+    raw_lookup = {g['gamePk']: g for d in schedule['dates'] for g in d['games']}
 
-    final_df = get_training_data()
-    long_df = clean_json_data()
-    long_df['run_diff'] = long_df['runs_scored'] - long_df['runs_allowed']
+    if not games:
+        return {'games': {}, 'model_accuracy': metrics.get('accuracy')}
 
-    game_ids = final_df['game_id'].unique()
-    pitcher_df = pull_all_pitcher_starts(game_ids)
-    game_dates = final_df[['game_id', 'date']].drop_duplicates()
-    pitcher_df = add_pitcher_rolling_stats(pitcher_df, game_dates)
-    team_lookup = final_df[['game_id', 'home_team_id', 'away_team_id']].drop_duplicates()
-    pitcher_df = pitcher_df.merge(team_lookup, on='game_id')
-    pitcher_df['team_id'] = pitcher_df.apply(lambda r: r['home_team_id'] if r['is_home'] else r['away_team_id'], axis=1)
+    long_df = clean_json_data(min_year=MIN_YEAR)
+    hist_final_df = get_training_data(min_year=MIN_YEAR)
+    pitcher_df = pull_all_pitcher_starts(hist_final_df['game_id'].unique())
 
-    # need raw game times, so re-fetch the game dict by game_id from raw_data
-    raw_game_lookup = {}
-    for date_entry in raw_data['dates']:
-        for g in date_entry['games']:
-            raw_game_lookup[g['gamePk']] = g
+    frame = build_feature_frame(games, long_df, pitcher_df, hist_final_df)
+    if uses_differences:
+        frame, _ = to_differences(frame, [c for c in frame.columns
+                                          if c.startswith(('home_', 'away_'))])
 
-    market_games = get_MLB_markets()  # fetch once, reused for every game below
+    missing = [c for c in trained_cols if c not in frame.columns]
+    if missing:
+        raise KeyError(f"Feature mismatch: {missing}. Retrain, or check MIN_YEAR={MIN_YEAR}.")
 
-    results = []
-    for game in games:
-        row = build_prediction_row(game, long_df, pitcher_df)
-        missing = [c for c in trained_feature_cols if c not in row or row[c] is None]
-        if missing:
-            continue  # skip games without enough data yet
+    usable = frame.dropna(subset=trained_cols)
+    prob_by_game = {}
+    if not usable.empty:
+        probs = model.predict_proba(usable[trained_cols])[:, 1]
+        prob_by_game = dict(zip(usable['game_id'], probs))
 
-        X_pred = pd.DataFrame([{c: row[c] for c in trained_feature_cols}])
-        prob_home_win = model_cv.predict_proba(X_pred)[0, 1]
-        prob_away_win = 1 - prob_home_win
+    out = {}
+    for g in games:
+        raw = raw_lookup.get(g['game_id'], {})
+        out[g['game_id']] = {
+            'game_id': g['game_id'],
+            'away': TEAM_SHORT_NAMES.get(g['away_team_id'], g['away_team_name']),
+            'home': TEAM_SHORT_NAMES.get(g['home_team_id'], g['home_team_name']),
+            'away_team_id': g['away_team_id'],
+            'home_team_id': g['home_team_id'],
+            'away_team_name': g['away_team_name'],
+            'home_team_name': g['home_team_name'],
+            'home_prediction': prob_by_game.get(g['game_id']),   # float or None
+            'time': format_game_time(raw['gameDate']) if raw else None,
+            'date': g['date'],
+        }
 
-        raw_game = raw_game_lookup[game['game_id']]
+    return {'games': out, 'model_accuracy': metrics.get('accuracy')}
 
-        # match this game to polymarket using FULL team names
-        polymarket_match = match_polymarket_to_game(market_games, game['home_team_name'], game['away_team_name'])
-        home_odds, away_odds = parse_polymarket_odds(polymarket_match, game['home_team_name'], game['away_team_name'])
 
-        results.append({
-            'game_id': game['game_id'],
-            'away': TEAM_SHORT_NAMES.get(game['away_team_id'], game['away_team_name']),
-            'home': TEAM_SHORT_NAMES.get(game['home_team_id'], game['home_team_name']),
-            'home_prediction': f"{prob_home_win:.0%}",
-            'away_prediction': f"{prob_away_win:.0%}",
-            'home_polymarket': f"{home_odds:.0%}" if home_odds is not None else None,
-            'away_polymarket': f"{away_odds:.0%}" if away_odds is not None else None,
-            'time': format_game_time(raw_game['gameDate']),
-            'date': game['date'],
-        })
-
-    return {
-        'games': results,
-        'model_accuracy': metrics.get('accuracy')
-    }

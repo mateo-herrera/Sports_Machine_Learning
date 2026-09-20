@@ -1,0 +1,86 @@
+[
+    {
+        "game_title": "Tampa Bay Rays vs. New York Yankees",
+        "date_time": "2026-09-22 17:05:00+00",
+        "outcomes": "[\"Tampa Bay Rays\", \"New York Yankees\"]",
+        "outcomePrices": "[\"0.425\", \"0.575\"]"
+    },
+    {
+        "game_title": "Kansas City Royals vs. Houston Astros",
+        "date_time": "2026-09-17 23:15:00+00",
+        "outcomes": "[\"Kansas City Royals\", \"Houston Astros\"]",
+        "outcomePrices": "[\"0.003\", \"0.997\"]"
+    },
+    {
+        "game_title": "Philadelphia Phillies vs. New York Mets",
+        "date_time": "2026-09-17 23:15:00+00",
+        "outcomes": "[\"Philadelphia Phillies\", \"New York Mets\"]",
+        "outcomePrices": "[\"0.963\", \"0.037\"]"
+    },
+    {
+        "game_title": "Detroit Tigers vs. Chicago White Sox",
+        "date_time": "2026-09-17 23:40:00+00",
+        "outcomes": "[\"Detroit Tigers\", \"Chicago White Sox\"]",
+        "outcomePrices": "[\"0.155\", \"0.845\"]"
+    },
+    {
+        "game_title": "Boston Red Sox vs. Texas Rangers",
+        "date_time": "2026-09-18 00:05:00+00",
+        "outcomes": "[\"Boston Red Sox\", \"Texas Rangers\"]",
+        "outcomePrices": "[\"0.151\", \"0.849\"]"
+    },
+    {
+        "game_title": "Minnesota Twins vs. Los Angeles Angels",
+        "date_time": "2026-09-18 01:38:00+00",
+        "outcomes": "[\"Minnesota Twins\", \"Los Angeles Angels\"]",
+        "outcomePrices": "[\"0.495\", \"0.505\"]"
+    },
+    {
+        "game_title": "Chicago Cubs vs. Cincinnati Reds",
+        "date_time": "2026-09-18 22:40:00+00",
+        "outcomes": "[\"Chicago Cubs\", \"Cincinnati Reds\"]",
+        "outcomePrices": "[\"0.555\", \"0.445\"]"
+    },
+    {
+        "game_title": "Kansas City Royals vs. Pittsburgh Pirates",
+        "date_time": "2026-09-18 22:40:00+00",
+        "outcomes": "[\"Kansas City Royals\", \"Pittsburgh Pirates\"]",
+        "outcomePrices": "[\"0.375\", \"0.625\"]"
+    },
+    {
+        "game_title": "Milwaukee Brewers vs. Baltimore Orioles",
+        "date_time": "2026-09-18 23:05:00+00",
+        "outcomes": "[\"Milwaukee Brewers\", \"Baltimore Orioles\"]",
+        "outcomePrices": "[\"0.58\", \"0.42\"]"
+    },
+    {
+        "game_title": "Athletics vs. Cleveland Guardians",
+        "date_time": "2026-09-18 23:10:00+00",
+        "outcomes": "[\"Athletics\", \"Cleveland Guardians\"]",
+        "outcomePrices": "[\"0.365\", \"0.635\"]"
+    },
+    {
+        "game_title": "Boston Red Sox vs. Tampa Bay Rays",
+        "date_time": "2026-09-18 23:10:00+00",
+        "outcomes": "[\"Boston Red Sox\", \"Tampa Bay Rays\"]",
+        "outcomePrices": "[\"0.455\", \"0.545\"]"
+    },
+    {
+        "game_title": "Toronto Blue Jays vs. Texas Rangers",
+        "date_time": "2026-09-19 00:05:00+00",
+        "outcomes": "[\"Toronto Blue Jays\", \"Texas Rangers\"]",
+        "outcomePrices": "[\"0.555\", \"0.445\"]"
+    },
+    {
+        "game_title": "Seattle Mariners vs. Colorado Rockies",
+        "date_time": "2026-09-19 00:10:00+00",
+        "outcomes": "[\"Seattle Mariners\", \"Colorado Rockies\"]",
+        "outcomePrices": "[\"0.59\", \"0.41\"]"
+    },
+    {
+        "game_title": "Atlanta Braves vs. Houston Astros",
+        "date_time": "2026-09-19 00:10:00+00",
+        "outcomes": "[\"Atlanta Braves\", \"Houston Astros\"]",
+        "outcomePrices": "[\"0.525\", \"0.475\"]"
+    }
+]

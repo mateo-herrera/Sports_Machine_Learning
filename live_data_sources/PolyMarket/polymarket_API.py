@@ -56,3 +56,29 @@ def get_MLB_markets():
     return games
     
 
+def match_polymarket_to_game(market_games, home_team_full, away_team_full):
+    for market in market_games:
+        title = market.get("game_title", "")
+        if home_team_full in title and away_team_full in title:
+            return market
+    return None
+
+def parse_polymarket_odds(market, home_team_full, away_team_full):
+    if not market:
+        return None, None
+
+    outcomes, prices = market.get("outcomes"), market.get("outcomePrices")
+    if not outcomes or not prices:
+        return None, None
+    if isinstance(outcomes, str):
+        outcomes = json.loads(outcomes)
+    if isinstance(prices, str):
+        prices = json.loads(prices)
+
+    home_price = away_price = None
+    for outcome, price in zip(outcomes, prices):
+        if outcome == home_team_full:
+            home_price = float(price)
+        elif outcome == away_team_full:
+            away_price = float(price)
+    return home_price, away_price

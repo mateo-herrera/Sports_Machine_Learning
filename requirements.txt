@@ -1,0 +1,19 @@
+# MLB Edge — backend dependencies
+# Python 3.11
+
+# --- API ---
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.29
+
+# --- Scheduling (daily retrain) ---
+# BackgroundScheduler is the 3.x API; APScheduler 4 is a breaking rewrite
+apscheduler>=3.10,<4.0
+
+# --- ML / data ---
+scikit-learn>=1.4,<1.6
+pandas>=2.1
+numpy>=1.26
+joblib>=1.3
+
+# --- External APIs (MLB StatsAPI, Polymarket) ---
+requests>=2.31

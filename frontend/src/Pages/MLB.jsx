@@ -63,8 +63,10 @@ export function MLB_Page() {
     const tomorrowGames = games.filter((g) => g.date === tomorrowStr);
 
 
+
+
     //Find the most likely winners for today by comparing model and prediction markets
-    const MIN_PROB = 58;  // model must give the team at least 58%
+    const MIN_PROB = 57.5;  // model must give the team at least 58%
     const MAX_DIFF = 4;   // model and Polymarket within 4 points
 
     const likelyWinners = todayGames
@@ -159,33 +161,40 @@ export function MLB_Page() {
         {likelyWinners.length > 0 && (
         <div className="w-[95%] mx-auto">
             <div className="flex flex-col">
-            {likelyWinners.map((p, i) => (
-                <div
-                key={`${p.game.game_id}-${p.team}`}
-                className={`w-[90%] ${i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]'} border-2 border-[#2c3442] rounded-lg px-1 py-1 text-white mx-auto mt-1 flex items-center justify-between`}
-                >
-                <div className="flex items-center gap-[.3rem] ">
-                    <img
-                        src={logo(p.teamId)}
-                        alt=""
-                        className="w-7 h-7"
-                        onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
-                    />
-                    <p className="font-bold">{p.team}</p>
-                </div>
-                <div className="flex text-[.8rem] px-10">
-                    <p className="text-[#c7c7c7]">
-                    Model: <span className="text-white font-bold">{p.model.toFixed(1)}%</span>
-                    </p>
-                    <p className="text-[#c7c7c7]">
-                    Market: <span className="text-white font-bold">{p.market.toFixed(1)}%</span>
-                    </p>
-                    <p className="text-[#c7c7c7]">
-                    Time: <span className="text-white font-bold">{p.game.time}</span>
-                    </p>
-                </div>
-                </div>
-            ))}
+            {likelyWinners.map((p, i) => {
+                const cardBG = i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]';
+                const logoBG = i % 2 === 0 ? 'bg-[#333942]' : 'bg-[#2e3c52]';
+                
+                return (
+                    <div
+                    key={`${p.game.game_id}-${p.team}`}
+                    className={`w-[90%] ${cardBG} border-2 border-[#2c3442] rounded-lg px-1 py-[.1rem] text-white mx-auto mt-1 flex items-center justify-between`}
+                    >
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-9 h-9 shrink-0 border-2 border-[#404f66] ${logoBG} rounded-md p-[.3rem] flex items-center justify-center`}>
+                            <img
+                                src={logo(p.teamId)}
+                                alt=""
+                                className="w-full h-full object-contain"
+                                onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
+                            />
+                        </div>
+                        <p className="font-bold text-[.9rem] truncate">{p.team}</p>
+                    </div>
+                    <div className="flex text-[.8rem] gap-3  shrink-0">
+                        <p className="w-14 text-[#c7c7c7] notflex">
+                        Model: <span className="block text-white font-bold">{p.model.toFixed(1)}%</span>
+                        </p>
+                        <p className="w-14 text-[#c7c7c7]">
+                        Market: <span className="block text-white font-bold">{p.market.toFixed(1)}%</span>
+                        </p>
+                        <p className="w-14 text-[#c7c7c7] ">
+                        Time: <span className="block text-white font-bold">{p.game.time}</span>
+                        </p>
+                    </div>
+                    </div>
+            );
+            })}
             </div>
         </div>
         )}
@@ -200,12 +209,15 @@ export function MLB_Page() {
         {todayGames.map((game, i) => {
             const awayEdge = edge(game.away_prediction, game.away_polymarket);
             const homeEdge = edge(game.home_prediction, game.home_polymarket);
+            const cardBG = i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]';
+            const logoBG = i % 2 === 0 ? 'bg-[#333942]' : 'bg-[#2e3c52]';
 
             return (
                 <div
                     key={game.game_id}
-                    className={`w-[80%] ${i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]'} border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2`}
+                    className={`w-[80%] ${cardBG} border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2`}
                 >
+                    
                     <div className="flex justify-center items-center gap-2">
                         {game.is_live && (
                             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -221,12 +233,14 @@ export function MLB_Page() {
 
                         {/* Away Team */}
                         <div className="text-center border-r border-[#2c3442]">
-                            <img
-                                src={logo(game.away_team_id)}
-                                alt=""
-                                className="w-10 h-10 mx-auto mb-1"
-                                onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
-                            />
+                            <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
+                                <img
+                                    src={logo(game.away_team_id)}
+                                    alt=""
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
+                                />
+                            </div>
                             <p className="font-bold text-[1.2rem]">
                                 {game.away}
                             </p>
@@ -261,12 +275,14 @@ export function MLB_Page() {
 
                         {/* Home Team */}
                         <div className="text-center">
-                            <img
-                                src={logo(game.home_team_id)}
-                                alt=""
-                                className="w-10 h-10 mx-auto mb-1"
-                                onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
-                            />
+                            <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
+                                <img
+                                    src={logo(game.home_team_id)}
+                                    alt=""
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
+                                />
+                            </div>
                             <p className="font-bold text-[1.2rem]">
                                 {game.home}
                             </p>
@@ -318,11 +334,13 @@ export function MLB_Page() {
         {tomorrowGames.map((game, i) => {
             const awayEdge = edge(game.away_prediction, game.away_polymarket);
             const homeEdge = edge(game.home_prediction, game.home_polymarket);
+            const cardBG = i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]';
+            const logoBG = i % 2 === 0 ? 'bg-[#333942]' : 'bg-[#2e3c52]';
 
             return (
                 <div
                     key={game.game_id}
-                    className={`w-[80%] ${i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]'} border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2`}
+                    className={`w-[80%] ${cardBG} border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2`}
                 >
                     <div className="flex justify-center items-center gap-2">
                         {game.is_live && (
@@ -339,12 +357,14 @@ export function MLB_Page() {
 
                         {/* Away Team */}
                         <div className="text-center border-r border-[#2c3442]">
-                            <img
-                                src={logo(game.away_team_id)}
-                                alt=""
-                                className="w-10 h-10 mx-auto mb-1"
-                                onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
-                            />
+                            <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
+                                <img
+                                    src={logo(game.away_team_id)}
+                                    alt=""
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
+                                />
+                            </div>
                             <p className="font-bold text-[1.2rem]">
                                 {game.away}
                             </p>
@@ -379,12 +399,14 @@ export function MLB_Page() {
 
                         {/* Home Team */}
                         <div className="text-center">
-                            <img
-                                src={logo(game.home_team_id)}
-                                alt=""
-                                className="w-10 h-10 mx-auto mb-1"
-                                onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
-                            />
+                            <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
+                                <img
+                                    src={logo(game.home_team_id)}
+                                    alt=""
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
+                                />
+                            </div>
                             <p className="font-bold text-[1.2rem]">
                                 {game.home}
                             </p>

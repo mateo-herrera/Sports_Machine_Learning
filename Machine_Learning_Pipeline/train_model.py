@@ -26,6 +26,21 @@ import joblib
 
 warnings.filterwarnings('ignore', category=FutureWarning)
 
+#For manual training
+
+# import pitcher_pipeline as ppl                               # noqa: E402
+# import team_data_pipeline as tdp                               # noqa: E402
+# from pitcher_pipeline import get_full_training_data              # noqa: E402
+# from team_data_pipeline import get_training_data                 # noqa: E402
+# from walk_forward import (                                       # noqa: E402
+#     calibration_table,
+#     compare,
+#     make_default_model,
+#     summarize,
+#     walk_forward,
+# )
+
+
 from . import pitcher_pipeline as ppl                               # noqa: E402
 from . import team_data_pipeline as tdp                               # noqa: E402
 from .pitcher_pipeline import get_full_training_data              # noqa: E402

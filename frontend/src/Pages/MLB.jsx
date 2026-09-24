@@ -62,6 +62,26 @@ export function MLB_Page() {
     const todayGames = games.filter((g) => g.date === todayStr);
     const tomorrowGames = games.filter((g) => g.date === tomorrowStr);
 
+
+    //Find the most likely winners for today by comparing model and prediction markets
+    const MIN_PROB = 58;  // model must give the team at least 58%
+    const MAX_DIFF = 4;   // model and Polymarket within 4 points
+
+    const likelyWinners = todayGames
+    .filter((g) => !g.is_final)
+    .flatMap((g) => [
+        { game: g, team: g.away, teamId: g.away_team_id, model: g.away_prediction * 100, market: g.away_polymarket * 100 },
+        { game: g, team: g.home, teamId: g.home_team_id, model: g.home_prediction * 100, market: g.home_polymarket * 100 },
+    ])
+    .filter((p) =>
+        Number.isFinite(p.model) &&
+        Number.isFinite(p.market) &&
+        p.model >= MIN_PROB &&
+        Math.abs(p.model - p.market) <= MAX_DIFF
+    )
+    .sort((a, b) => b.model - a.model)
+    .slice(0, 3);
+
   return (
     
     <div className="bg-[#030d1f] min-h-screen">
@@ -129,23 +149,62 @@ export function MLB_Page() {
 
         </div>        
 
-
+        {/* Todays Games Most Likely Winners */}
+        <div className="w-[95%] mx-auto mb-1 mt-3 box-border rounded-lg border-2 border-[#2c3442] bg-[#050c14] text-white">
+            <div className="flex justify-between px-4 py-2">
+                <span className='text-[1rem] font-bold'>Today's Most Likely Winners</span>
+                <span className='text-[.9rem] font-bold text-[#c7c7c7]'>{today_date}</span>
+            </div>
+        </div>
+        {likelyWinners.length > 0 && (
+        <div className="w-[95%] mx-auto">
+            <div className="flex flex-col">
+            {likelyWinners.map((p, i) => (
+                <div
+                key={`${p.game.game_id}-${p.team}`}
+                className={`w-[90%] ${i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]'} border-2 border-[#2c3442] rounded-lg px-1 py-1 text-white mx-auto mt-1 flex items-center justify-between`}
+                >
+                <div className="flex items-center gap-[.3rem] ">
+                    <img
+                        src={logo(p.teamId)}
+                        alt=""
+                        className="w-7 h-7"
+                        onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+                    />
+                    <p className="font-bold">{p.team}</p>
+                </div>
+                <div className="flex text-[.8rem] px-10">
+                    <p className="text-[#c7c7c7]">
+                    Model: <span className="text-white font-bold">{p.model.toFixed(1)}%</span>
+                    </p>
+                    <p className="text-[#c7c7c7]">
+                    Market: <span className="text-white font-bold">{p.market.toFixed(1)}%</span>
+                    </p>
+                    <p className="text-[#c7c7c7]">
+                    Time: <span className="text-white font-bold">{p.game.time}</span>
+                    </p>
+                </div>
+                </div>
+            ))}
+            </div>
+        </div>
+        )}
         {/* Todays Games */}
-        <div className="w-[95%] mx-auto mb-1 mt-3 box-border rounded-lg border-2 border-[#2c3442] bg-[#131d2e] text-white">
+        <div className="w-[95%] mx-auto mb-1 mt-3 box-border rounded-lg border-2 border-[#2c3442] bg-[#050c14] text-white">
             <div className="flex justify-between px-4 py-2">
                 <span className='text-[1rem] font-bold'>Today's Games</span>
-                <span className='text-[.9rem] font-light text-[#c7c7c7]'>{today_date}</span>
+                <span className='text-[.9rem] font-bold text-[#c7c7c7]'>{today_date}</span>
             </div>
         </div>
 
-        {todayGames.map((game) => {
+        {todayGames.map((game, i) => {
             const awayEdge = edge(game.away_prediction, game.away_polymarket);
             const homeEdge = edge(game.home_prediction, game.home_polymarket);
 
             return (
                 <div
                     key={game.game_id}
-                    className="w-[80%] bg-[#232b38] border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2"
+                    className={`w-[80%] ${i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]'} border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2`}
                 >
                     <div className="flex justify-center items-center gap-2">
                         {game.is_live && (
@@ -248,22 +307,22 @@ export function MLB_Page() {
         
 
         {/*Tomorrows Games */}
-        <div className="w-[95%] mx-auto mb-1 mt-3 box-border rounded-lg border-2 border-[#2c3442] bg-[#131d2e] text-white">
+        <div className="w-[95%] mx-auto mb-1 mt-3 box-border rounded-lg border-2 border-[#2c3442] bg-[#050c14] text-white">
             <div className="flex justify-between px-4 py-2">
                 <span className='text-[1rem] font-bold'>Tomorrows's Games</span>
-                <span className='text-[.9rem] font-light text-[#c7c7c7]'>{tomorrows_date}</span>
+                <span className='text-[.9rem] font-bold  text-[#c7c7c7]'>{tomorrows_date}</span>
             </div>
         </div>
 
         {/* Maps Tomorrows games to cards */}
-        {tomorrowGames.map((game) => {
+        {tomorrowGames.map((game, i) => {
             const awayEdge = edge(game.away_prediction, game.away_polymarket);
             const homeEdge = edge(game.home_prediction, game.home_polymarket);
 
             return (
                 <div
                     key={game.game_id}
-                    className="w-[80%] bg-[#232b38] border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2"
+                    className={`w-[80%] ${i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]'} border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2`}
                 >
                     <div className="flex justify-center items-center gap-2">
                         {game.is_live && (

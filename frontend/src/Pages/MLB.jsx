@@ -99,10 +99,10 @@ export function MLB_Page() {
             <div className="flex-1 bg-[#131d2e] border-2 border-[#2c3442] rounded-lg px-2 py-1">
                 {/* Image */}
                 <div className="flex justify-center">
-                    <img src={today_icon} alt="today" className="w-10 h-10"/>
+                    <img src={today_icon} alt="today" className="w-12 h-12"/>
                 </div>
                 {/* Bottom row */}
-                <div className="flex justify-between items-end mt-1">
+                <div className="flex justify-between items-end gap-[.1rem] mt-1">
                     <p className="text-[#c7c7c7] font-bold text-[.8rem]">
                         Today's Games
                     </p>
@@ -115,10 +115,10 @@ export function MLB_Page() {
             <div className="flex-1 bg-[#131d2e] border-2 border-[#2c3442] rounded-lg px-2 py-1">
                 {/* Image */}
                 <div className="flex justify-center">
-                    <img src={tomorrow_icon} alt="today" className="w-10 h-10"/>
+                    <img src={tomorrow_icon} alt="today" className="w-12 h-12"/>
                 </div>
                 {/* Bottom row */}
-                <div className="flex justify-between items-end mt-1">
+                <div className="flex justify-between items-end gap-[.1rem] mt-1">
                     <p className="text-[#c7c7c7] font-bold text-[.8rem]">
                         Tmrw's Games
                     </p>
@@ -132,10 +132,10 @@ export function MLB_Page() {
             <div className="flex-1 bg-[#131d2e] border-2 border-[#2c3442] rounded-lg px-2 py-1">
                 {/* Image */}
                 <div className="flex justify-center">
-                    <img src={accuracy_icon} alt="accuracy" className="w-10 h-10"/>
+                    <img src={accuracy_icon} alt="accuracy" className="w-12 h-12"/>
                 </div>
                 {/* Bottom row */}
-                <div className="flex justify-between items-end mt-1">
+                <div className="flex justify-between items-end gap-[.1rem] mt-1">
                     <p className="text-[#c7c7c7] font-bold text-[.8rem]">
                         Model Accuracy
                     </p>

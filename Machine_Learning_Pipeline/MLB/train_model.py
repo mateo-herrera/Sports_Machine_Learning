@@ -28,11 +28,11 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 
 #For manual training
 
-# import pitcher_pipeline as ppl                               # noqa: E402
-# import team_data_pipeline as tdp                               # noqa: E402
-# from pitcher_pipeline import get_full_training_data              # noqa: E402
-# from team_data_pipeline import get_training_data                 # noqa: E402
-# from walk_forward import (                                       # noqa: E402
+# import pitcher_pipeline as ppl                                
+# import team_data_pipeline as tdp                                
+# from pitcher_pipeline import get_full_training_data               
+# from team_data_pipeline import get_training_data                 
+# from walk_forward import (                                       
 #     calibration_table,
 #     compare,
 #     make_default_model,
@@ -41,11 +41,11 @@ warnings.filterwarnings('ignore', category=FutureWarning)
 # )
 
 
-from . import pitcher_pipeline as ppl                               # noqa: E402
-from . import team_data_pipeline as tdp                               # noqa: E402
-from .pitcher_pipeline import get_full_training_data              # noqa: E402
-from .team_data_pipeline import get_training_data                 # noqa: E402
-from .walk_forward import (                                       # noqa: E402
+from ..MLB import pitcher_pipeline as ppl                                
+from ..MLB import team_data_pipeline as tdp                                
+from .pitcher_pipeline import get_full_training_data               
+from .team_data_pipeline import get_training_data                  
+from .walk_forward import (                                       
     calibration_table,
     compare,
     make_default_model,

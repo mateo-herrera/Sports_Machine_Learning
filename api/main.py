@@ -7,8 +7,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from live_data_sources.MLB_game.mlb_api import get_game_statuses
 from live_data_sources.PolyMarket.polymarket_API import match_polymarket_to_game, get_MLB_markets, parse_polymarket_odds
-from Machine_Learning_Pipeline.predict_pipeline import compute_predictions
-from Machine_Learning_Pipeline.train_model import main as retrain
+from Machine_Learning_Pipeline.MLB.predict_pipeline import compute_predictions
+from Machine_Learning_Pipeline.MLB.train_model import main as retrain
 
 app = FastAPI(title="MLB Predictions API")
 

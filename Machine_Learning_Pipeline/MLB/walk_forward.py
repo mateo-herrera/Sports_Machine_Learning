@@ -312,8 +312,8 @@ def calibration_table(result, bins=10):
 # --------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    from team_data_pipeline import get_training_data
-    from pitcher_pipeline import get_full_training_data
+    from MLB.team_data_pipeline import get_training_data
+    from MLB.pitcher_pipeline import get_full_training_data
 
     df = get_full_training_data(get_training_data())
 

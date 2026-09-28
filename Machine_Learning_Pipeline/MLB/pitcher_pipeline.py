@@ -397,7 +397,7 @@ def get_full_training_data(final_df, dropna=True):
 
 
 if __name__ == '__main__':
-    from team_data_pipeline import get_training_data
+    from MLB.team_data_pipeline import get_training_data
 
     df = get_full_training_data(get_training_data())
     print(f"\n{len(df)} games")

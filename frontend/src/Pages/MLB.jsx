@@ -154,7 +154,7 @@ export function MLB_Page() {
         {/* Todays Games Most Likely Winners */}
         <div className="w-[95%] mx-auto mb-1 mt-3 box-border rounded-lg border-2 border-[#2c3442] bg-[#050c14] text-white">
             <div className="flex justify-between px-4 py-2">
-                <span className='text-[1rem] font-bold'>Today's Most Likely Winners</span>
+                <span className='text-[1rem] font-bold'>Highest Probabilities</span>
                 <span className='text-[.9rem] font-bold text-[#c7c7c7]'>{today_date}</span>
             </div>
         </div>
@@ -206,119 +206,129 @@ export function MLB_Page() {
             </div>
         </div>
 
-        {todayGames.map((game, i) => {
-            const awayEdge = edge(game.away_prediction, game.away_polymarket);
-            const homeEdge = edge(game.home_prediction, game.home_polymarket);
-            const cardBG = i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]';
-            const logoBG = i % 2 === 0 ? 'bg-[#333942]' : 'bg-[#2e3c52]';
+        {/* Maps Todays games to cards and checks if theres games */}
+        {todayGames.length == 0 ? (
+            <div className="w-[80%] bg-[#232b38] border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-3 text-center">
+                <p className="text-[#888] text-[1rem]">
+                    No Games
+                </p>
+            </div>
 
-            return (
-                <div
-                    key={game.game_id}
-                    className={`w-[80%] ${cardBG} border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2`}
-                >
-                    
-                    <div className="flex justify-center items-center gap-2">
-                        {game.is_live && (
-                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                        )}
-                        <p className={`text-[1rem] ${game_status_headerStyle(game)}`}>
-                            {game.is_live ? (game.inning || 'Live')
-                                : game.is_final ? 'Final'
-                                : game.time}
-                        </p>
-                    </div>
+        ) : (
+            todayGames.map((game, i) => {
+                const awayEdge = edge(game.away_prediction, game.away_polymarket);
+                const homeEdge = edge(game.home_prediction, game.home_polymarket);
+                const cardBG = i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]';
+                const logoBG = i % 2 === 0 ? 'bg-[#333942]' : 'bg-[#2e3c52]';
 
-                    <div className="grid grid-cols-2">
-
-                        {/* Away Team */}
-                        <div className="text-center border-r border-[#2c3442]">
-                            <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
-                                <img
-                                    src={logo(game.away_team_id)}
-                                    alt=""
-                                    className="w-full h-full object-contain"
-                                    onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
-                                />
-                            </div>
-                            <p className="font-bold text-[1.2rem]">
-                                {game.away}
+                return (
+                    <div
+                        key={game.game_id}
+                        className={`w-[80%] ${cardBG} border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2`}
+                    >
+                        
+                        <div className="flex justify-center items-center gap-2">
+                            {game.is_live && (
+                                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            )}
+                            <p className={`text-[1rem] ${game_status_headerStyle(game)}`}>
+                                {game.is_live ? (game.inning || 'Live')
+                                    : game.is_final ? 'Final'
+                                    : game.time}
                             </p>
-
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    MODEL
-                                </p>
-                                <p className="font-bold text-[1rem]">
-                                    {pct(game.away_prediction)}
-                                </p>
-                            </div>
-
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    POLYMARKET
-                                </p>
-                                <p className="font-bold text-[1rem]">
-                                    {pct(game.away_polymarket)}
-                                </p>
-                            </div>
-
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    EDGE
-                                </p>
-                                <p className={`font-bold text-[1rem] ${edgeStyle(awayEdge)}`}>
-                                    {formatEdge(awayEdge)}
-                                </p>
-                            </div>
                         </div>
 
-                        {/* Home Team */}
-                        <div className="text-center">
-                            <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
-                                <img
-                                    src={logo(game.home_team_id)}
-                                    alt=""
-                                    className="w-full h-full object-contain"
-                                    onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
-                                />
-                            </div>
-                            <p className="font-bold text-[1.2rem]">
-                                {game.home}
-                            </p>
+                        <div className="grid grid-cols-2">
 
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    MODEL
+                            {/* Away Team */}
+                            <div className="text-center border-r border-[#2c3442]">
+                                <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
+                                    <img
+                                        src={logo(game.away_team_id)}
+                                        alt=""
+                                        className="w-full h-full object-contain"
+                                        onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
+                                    />
+                                </div>
+                                <p className="font-bold text-[1.2rem]">
+                                    {game.away}
                                 </p>
-                                <p className="font-bold text-[1rem]">
-                                    {pct(game.home_prediction)}
-                                </p>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        MODEL
+                                    </p>
+                                    <p className="font-bold text-[1rem]">
+                                        {pct(game.away_prediction)}
+                                    </p>
+                                </div>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        POLYMARKET
+                                    </p>
+                                    <p className="font-bold text-[1rem]">
+                                        {pct(game.away_polymarket)}
+                                    </p>
+                                </div>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        EDGE
+                                    </p>
+                                    <p className={`font-bold text-[1rem] ${edgeStyle(awayEdge)}`}>
+                                        {formatEdge(awayEdge)}
+                                    </p>
+                                </div>
                             </div>
 
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    POLYMARKET
+                            {/* Home Team */}
+                            <div className="text-center">
+                                <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
+                                    <img
+                                        src={logo(game.home_team_id)}
+                                        alt=""
+                                        className="w-full h-full object-contain"
+                                        onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
+                                    />
+                                </div>
+                                <p className="font-bold text-[1.2rem]">
+                                    {game.home}
                                 </p>
-                                <p className="font-bold text-[1rem]">
-                                    {pct(game.home_polymarket)}
-                                </p>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        MODEL
+                                    </p>
+                                    <p className="font-bold text-[1rem]">
+                                        {pct(game.home_prediction)}
+                                    </p>
+                                </div>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        POLYMARKET
+                                    </p>
+                                    <p className="font-bold text-[1rem]">
+                                        {pct(game.home_polymarket)}
+                                    </p>
+                                </div>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        EDGE
+                                    </p>
+                                    <p className={`font-bold text-[1rem] ${edgeStyle(homeEdge)}`}>
+                                        {formatEdge(homeEdge)}
+                                    </p>
+                                </div>
                             </div>
 
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    EDGE
-                                </p>
-                                <p className={`font-bold text-[1rem] ${edgeStyle(homeEdge)}`}>
-                                    {formatEdge(homeEdge)}
-                                </p>
-                            </div>
                         </div>
-
                     </div>
-                </div>
-            );
-        })}
+                );
+            })
+        )}
         
         
 
@@ -330,119 +340,129 @@ export function MLB_Page() {
             </div>
         </div>
 
-        {/* Maps Tomorrows games to cards */}
-        {tomorrowGames.map((game, i) => {
-            const awayEdge = edge(game.away_prediction, game.away_polymarket);
-            const homeEdge = edge(game.home_prediction, game.home_polymarket);
-            const cardBG = i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]';
-            const logoBG = i % 2 === 0 ? 'bg-[#333942]' : 'bg-[#2e3c52]';
+        {/* Maps Tomorrows games to cards and checks if theres games */}
+        {tomorrowGames.length == 0 ? (
+            <div className="w-[80%] bg-[#232b38] border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-3 text-center">
+                <p className="text-[#888] text-[1rem]">
+                    No Games
+                </p>
+            </div>
 
-            return (
-                <div
-                    key={game.game_id}
-                    className={`w-[80%] ${cardBG} border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2`}
-                >
-                    <div className="flex justify-center items-center gap-2">
-                        {game.is_live && (
-                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                        )}
-                        <p className="text-[#888] text-[1rem]">
-                            {game.is_live ? (game.inning || 'Live')
-                                : game.is_final ? 'Final'
-                                : game.time}
-                        </p>
-                    </div>
+        ) : (
 
-                    <div className="grid grid-cols-2">
+            tomorrowGames.map((game, i) => {
+                const awayEdge = edge(game.away_prediction, game.away_polymarket);
+                const homeEdge = edge(game.home_prediction, game.home_polymarket);
+                const cardBG = i % 2 === 0 ? 'bg-[#232b38]' : 'bg-[#151c26]';
+                const logoBG = i % 2 === 0 ? 'bg-[#333942]' : 'bg-[#2e3c52]';
 
-                        {/* Away Team */}
-                        <div className="text-center border-r border-[#2c3442]">
-                            <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
-                                <img
-                                    src={logo(game.away_team_id)}
-                                    alt=""
-                                    className="w-full h-full object-contain"
-                                    onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
-                                />
-                            </div>
-                            <p className="font-bold text-[1.2rem]">
-                                {game.away}
+                return (
+                    <div
+                        key={game.game_id}
+                        className={`w-[80%] ${cardBG} border-2 border-[#2c3442] rounded-lg p-1 text-white mx-auto mt-2 mb-2`}
+                    >
+                        <div className="flex justify-center items-center gap-2">
+                            {game.is_live && (
+                                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            )}
+                            <p className="text-[#888] text-[1rem]">
+                                {game.is_live ? (game.inning || 'Live')
+                                    : game.is_final ? 'Final'
+                                    : game.time}
                             </p>
-
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    MODEL
-                                </p>
-                                <p className="font-bold text-[1rem]">
-                                    {pct(game.away_prediction)}
-                                </p>
-                            </div>
-
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    POLYMARKET
-                                </p>
-                                <p className="font-bold text-[1rem]">
-                                    {pct(game.away_polymarket)}
-                                </p>
-                            </div>
-
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    EDGE
-                                </p>
-                                <p className={`font-bold text-[1rem] ${edgeStyle(awayEdge)}`}>
-                                    {formatEdge(awayEdge)}
-                                </p>
-                            </div>
                         </div>
 
-                        {/* Home Team */}
-                        <div className="text-center">
-                            <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
-                                <img
-                                    src={logo(game.home_team_id)}
-                                    alt=""
-                                    className="w-full h-full object-contain"
-                                    onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
-                                />
-                            </div>
-                            <p className="font-bold text-[1.2rem]">
-                                {game.home}
-                            </p>
+                        <div className="grid grid-cols-2">
 
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    MODEL
+                            {/* Away Team */}
+                            <div className="text-center border-r border-[#2c3442]">
+                                <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
+                                    <img
+                                        src={logo(game.away_team_id)}
+                                        alt=""
+                                        className="w-full h-full object-contain"
+                                        onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
+                                    />
+                                </div>
+                                <p className="font-bold text-[1.2rem]">
+                                    {game.away}
                                 </p>
-                                <p className="font-bold text-[1rem]">
-                                    {pct(game.home_prediction)}
-                                </p>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        MODEL
+                                    </p>
+                                    <p className="font-bold text-[1rem]">
+                                        {pct(game.away_prediction)}
+                                    </p>
+                                </div>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        POLYMARKET
+                                    </p>
+                                    <p className="font-bold text-[1rem]">
+                                        {pct(game.away_polymarket)}
+                                    </p>
+                                </div>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        EDGE
+                                    </p>
+                                    <p className={`font-bold text-[1rem] ${edgeStyle(awayEdge)}`}>
+                                        {formatEdge(awayEdge)}
+                                    </p>
+                                </div>
                             </div>
 
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    POLYMARKET
+                            {/* Home Team */}
+                            <div className="text-center">
+                                <div className={`w-12 h-12 mx-auto mb-1 border-2 border-[#404f66] ${logoBG} rounded-md p-1 flex items-center justify-center`}>
+                                    <img
+                                        src={logo(game.home_team_id)}
+                                        alt=""
+                                        className="w-full h-full object-contain"
+                                        onError={(e) => { e.currentTarget.parentElement.style.visibility = 'hidden'; }}
+                                    />
+                                </div>
+                                <p className="font-bold text-[1.2rem]">
+                                    {game.home}
                                 </p>
-                                <p className="font-bold text-[1rem]">
-                                    {pct(game.home_polymarket)}
-                                </p>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        MODEL
+                                    </p>
+                                    <p className="font-bold text-[1rem]">
+                                        {pct(game.home_prediction)}
+                                    </p>
+                                </div>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        POLYMARKET
+                                    </p>
+                                    <p className="font-bold text-[1rem]">
+                                        {pct(game.home_polymarket)}
+                                    </p>
+                                </div>
+
+                                <div className="mt-1">
+                                    <p className="text-[#888] text-[.8rem]">
+                                        EDGE
+                                    </p>
+                                    <p className={`font-bold text-[1rem] ${edgeStyle(homeEdge)}`}>
+                                        {formatEdge(homeEdge)}
+                                    </p>
+                                </div>
                             </div>
 
-                            <div className="mt-1">
-                                <p className="text-[#888] text-[.8rem]">
-                                    EDGE
-                                </p>
-                                <p className={`font-bold text-[1rem] ${edgeStyle(homeEdge)}`}>
-                                    {formatEdge(homeEdge)}
-                                </p>
-                            </div>
                         </div>
-
                     </div>
-                </div>
-            );
-        })}
+                );
+            })
+        )}
 
     </div>
   )

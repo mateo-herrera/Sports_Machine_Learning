@@ -1,11 +1,16 @@
 import { useState } from 'react'
-import { MLB_Page } from './Pages/MLB.jsx'
+import { Routes, Route } from "react-router-dom"
 
+import { MLB_Page } from './Pages/MLB.jsx'
+import {PublicPage } from './Pages/PublicPage'
 
 function App() {
 
   return (
-    <MLB_Page></MLB_Page>
+    <Routes>
+      <Route path="/" element={<PublicPage/>}/>
+      <Route path="/MLB" element={<MLB_Page/>}/>
+    </Routes>
   )
 }
 

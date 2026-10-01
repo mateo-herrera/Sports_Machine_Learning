@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
+// For local test
+// const API_URL = '/api/games';
 
-const API_URL = '/api/games';
+//For deployment
+const API_URL = `${import.meta.env.VITE_API_URL ?? ''}/api/games`;
 
 export function useGames() {
   const [games, setGames] = useState([]);

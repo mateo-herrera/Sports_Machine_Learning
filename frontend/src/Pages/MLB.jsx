@@ -1,4 +1,4 @@
-import mlblogo from '../../assests/mlb.svg'
+import flamingBaseball from '../../assests/Flaming_Baseball_logo.png'
 import accuracy_icon from '../../assests/accuracy_icon.png'
 import today_icon from '../../assests/today_icon.png'
 import tomorrow_icon from '../../assests/tomorrow_icon.png'
@@ -87,9 +87,9 @@ export function MLB_Page() {
   return (
     
     <div className="bg-[#030d1f] min-h-screen">
-        {/* Header with mlb logo */}
-        <div className="bg-[#000f26] flex justify-center border-3 border-[#2c3442]">
-            <img src={mlblogo} alt="MLB" className="w-13 h-13" />
+        {/* Header with baseball logo */}
+        <div className="bg-[#000f26] flex justify-center border-3 py-1 border-[#2c3442]">
+            <img src={flamingBaseball} alt="MLB" className="w-13 h-13" />
         </div>
 
         {/* Total games today and Total games Tomorrow and Model Accuracy */}

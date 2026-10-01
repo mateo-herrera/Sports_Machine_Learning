@@ -1,4 +1,7 @@
 
+import os
+import traceback
+from datetime import datetime
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,31 +14,48 @@ from Machine_Learning_Pipeline.MLB.predict_pipeline import compute_predictions
 from Machine_Learning_Pipeline.MLB.train_model import main as retrain
 
 app = FastAPI(title="MLB Predictions API")
+allowed_origins = ["http://localhost:5173"]
+
+if os.getenv("FRONTEND_URL"):
+    allowed_origins.append(os.getenv("FRONTEND_URL"))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # your React dev server
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
 _predictions = {'games': {}, 'model_accuracy': None}
+_loading = True 
 
 scheduler = BackgroundScheduler()
 
 
 def retrain_then_refresh():
-    retrain()              # your existing daily retrain
-    refresh_predictions()  # reload the new model, recompute
+    try:
+        retrain()
+    except Exception:
+        print("retrain failed")
+        traceback.print_exc()
+    refresh_predictions()
 
 def refresh_predictions():
-    global _predictions
-    _predictions = compute_predictions()
+    global _predictions, _loading
+    try:
+        _predictions = compute_predictions()
+        print("Predictions refreshed")
+    except Exception:
+        # Errors in background jobs don't crash the app, so log them explicitly
+        print("Failed to refresh predictions:")
+        traceback.print_exc()
+    finally:
+        _loading = False
 
 @app.on_event("startup")
 def startup():
-    refresh_predictions()
+    scheduler.add_job(refresh_predictions, next_run_time=datetime.now())
     scheduler.add_job(refresh_predictions, "cron", hour="*")   # pitchers get announced through the day
     scheduler.add_job(retrain_then_refresh, "cron", hour=11)
     scheduler.start()

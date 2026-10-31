@@ -1,8 +1,9 @@
 import flamingBaseball from '../../assests/Flaming_Baseball_logo.png'
 import screenshot from '../../assests/ScreenShot_10_1_2026.png'
 import website_background from '../../assests/website_background.png'
+import DelayNotice from './DelayNotice'
 
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom"
 
 const steps = [
     {
@@ -46,6 +47,7 @@ export function PublicPage(){
 
     return(
          <div className="bg-[#030d1f] min-h-screen">
+            <DelayNotice />
 
             {/* Hero: the only section with the background image */}
             <section className="relative isolate overflow-hidden min-h-screen">

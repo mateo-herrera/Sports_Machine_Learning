@@ -40,7 +40,7 @@ The design separates expensive work from the request path:
 | ML             | scikit-learn, pandas, NumPy, joblib                      |
 | Scheduling     | APScheduler (in-process daily job)                       |
 | Data sources   | MLB game and pitcher stats; Polymarket API for live odds |
-| Remote access  | Tailscale (private network, no public exposure)          |
+| Hosting        | Render Free Tier                                         |
 
 In development, Vite proxies `/api/*` to the FastAPI backend, so the frontend uses one relative URL that works identically in dev and behind nginx in production — no CORS config, no hardcoded backend host.
 
